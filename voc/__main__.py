@@ -11,6 +11,13 @@ def main():
     )
 
     parser.add_argument(
+        '-t', '--target',
+        help='The target byte code family (Java/MSIL)',
+        type=str.lower,
+        choices=["java", "msil"],
+        default="java"
+    )
+    parser.add_argument(
         '-o', '--output',
         help='The directory where class files should be output.',
         default='.'
@@ -46,6 +53,7 @@ def main():
 
     transpile(
         input=args.input,
+        target=args.target,
         prefix=args.prefix,
         outdir=args.output,
         namespace=args.namespace,

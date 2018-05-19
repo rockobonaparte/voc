@@ -17,7 +17,7 @@ from voc.java.constants import ConstantPool, Utf8
 from voc.java.klass import ClassFileReader, ClassFileWriter
 
 from voc.java.attributes import Code as JavaCode
-from voc.transpiler import Transpiler
+from voc.transpiler import JavaTranspiler
 
 # get path to `tests` directory
 TESTS_DIR = os.path.dirname(__file__)
@@ -554,7 +554,7 @@ class TranspileTestCase(TestCase):
     def runAsJava(self, main_code, extra_code=None, args=None):
         """Run a block of Python code as a Java program."""
         # Output source code into test directory
-        transpiler = Transpiler(verbosity=0)
+        transpiler = JavaTranspiler(verbosity=0)
 
         # Don't redirect stderr; we want to see any errors from the transpiler
         # as top level test failures.

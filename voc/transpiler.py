@@ -1,3 +1,4 @@
+import abc
 import ast
 import os
 import sys
@@ -6,8 +7,13 @@ from .python.ast import Visitor
 from .python.debug import dump
 
 
-def transpile(input, prefix='.', outdir=None, namespace='python', verbosity=0):
-    transpiler = Transpiler(namespace=namespace, verbosity=verbosity)
+def transpile(input, target='java', prefix='.', outdir=None, namespace='python',
+              verbosity=0):
+    if target == 'java':
+        print("Target is Java")
+        transpiler = JavaTranspiler(namespace=namespace, verbosity=verbosity)
+    elif target == 'msil':
+        transpiler = MsilTranspiler(namespace=namespace, verbosity=verbosity)
 
     for file_or_dir in input:
         if os.path.isfile(file_or_dir):
@@ -33,7 +39,25 @@ def transpile(input, prefix='.', outdir=None, namespace='python', verbosity=0):
     transpiler.write(outdir)
 
 
-class Transpiler:
+class Transpiler():
+    __metaclass__ = abc.ABCMeta
+    
+    @abc.abstractmethod
+    def transpile(self, filename, ast_module, prefix):
+        """Transpile a Python source file into class files"""
+        pass
+    
+    def transpile_string(self, filename, code_string):
+        """Transpile a string containing Python code into the target language"""
+        ast_module = ast.parse(code_string, mode='exec')
+        self.transpile_code(filename, ast_module)
+
+    def transpile_code(self, filename, ast_module):
+        """Transpile a code object into the target language"""
+
+
+class JavaTranspiler(Transpiler):
+    """Transpiles Python byte-code into Java .class byte code"""
     def __init__(self, namespace="python", verbosity=0):
         self.namespace = namespace
         self.classfiles = []
@@ -62,7 +86,7 @@ class Transpiler:
                 javaclassfile.write(out)
 
     def transpile(self, filename, ast_module, prefix):
-        "Transpile a Python source file into class files"
+        """Transpile a Python source file into class files"""
         # Determine what portion of the filename is part of the
         # common source directory, and which is namespace.
         common = os.path.commonprefix([
@@ -73,12 +97,12 @@ class Transpiler:
         self.transpile_code(os.path.abspath(filename)[len(common) + 1:], ast_module)
 
     def transpile_string(self, filename, code_string):
-        "Transpile a string containing Python code into class files"
+        """Transpile a string containing Python code into class files"""
         ast_module = ast.parse(code_string, mode='exec')
         self.transpile_code(filename, ast_module)
 
     def transpile_code(self, filename, ast_module):
-        "Transpile a code object into class files"
+        """Transpile a code object into class files"""
         # Convert the AST into Java opcodes
         if self.verbosity > 1:
             print('=' * 75)
@@ -90,3 +114,22 @@ class Transpiler:
         # Transpile the module code, adding any classfiles generated
         # to the list to be exported.
         self.classfiles.extend(module.transpile())
+
+
+class MsilTranspiler(Transpiler):
+    """Transpiles Python byte-code into MSIL (.NET/Mono) byte code"""
+    def __init__(self, namespace="python", verbosity=0):
+        self.namespace = namespace
+        self.verbosity = verbosity
+
+    def transpile(self, filename, ast_module, prefix):
+        """Transpile a Python source file into MSIL"""
+        raise NotImplemented()
+
+    def transpile_string(self, filename, code_string):
+        """Transpile a string containing Python code into MSIL"""
+        raise NotImplemented()
+
+    def transpile_code(self, filename, ast_module):
+        """Transpile a code object into class files"""
+        raise NotImplemented()
